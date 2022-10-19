@@ -120,15 +120,7 @@ def create_agg_plot(df, val_col="contributor_count", title=''):
     )
     return fig
 
-
-st.markdown(
-    """
-## TODO
-- [x] Create project list
-- [] Event plots by type by month (bar chart)
-- [] Summary event plot
-"""
-)
+st.title("Crypto Developer Tracker")
 meta_df, projects, tags = load_metadata(METADATA_PATH)
 
 st.header("Select projects")
