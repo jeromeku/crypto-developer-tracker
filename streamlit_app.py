@@ -156,7 +156,7 @@ st.plotly_chart(agg_fig)
 st.plotly_chart(tagged_fig)
 
 events_df = load_events_df()
-events_df = events_df[events_df['type'.isin(DEFAULT_EVENT_SET)]]
+events_df = events_df[events_df['type'].isin(DEFAULT_EVENT_SET)]
 event_plot_df = events_df.query("title.isin(selected_projects)")
 event_fig = px.bar(event_plot_df, x="date", y="event_count", color="type", log_y=True, barmode='group',facet_row="title",)
 st.plotly_chart(event_fig)
