@@ -136,14 +136,12 @@ selected_projects = st.multiselect("Projects", projects, ["Ethereum"])
 
 project_pat = create_search_pat(selected_projects)
 
-st.text(f"Project: {selected_projects}, {project_pat}")
 contribs_df = load_contribs_df()
 
 plot_df = contribs_df[
     contribs_df.title.str.contains(project_pat, flags=re.I, regex=True)
 ]
 
-st.dataframe(plot_df.sample(3))
 plot_options = {"log_y": False}
 fig = create_line_plot(plot_df, **plot_options)
 st.plotly_chart(fig)
