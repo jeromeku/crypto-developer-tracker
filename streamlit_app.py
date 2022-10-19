@@ -160,7 +160,28 @@ events_df = load_events_df()
 st.title("Crypto Developer Tracker")
 st.header("Introduction")
 st.header("Methodology")
+st.markdown("""
+#### Electric Capital
+Primary source of projects and their respective github organizations and repos was Electric Capital's open source [Crypto Ecosystem repo](https://github.com/electric-capital/crypto-ecosystems).   
 
+> *Crypto Ecosystems is a taxonomy for sharing data around open source blockchain, Web3, cryptocurrency, and decentralized ecosystems and tying them to GitHub organizations and code repositories.   
+> All of the ecosystems are specified in TOML configuration files.*
+
+#### Github Events Archive
+Open source dataset of all events triggered by public Github repos.  
+See [Github Event docs](https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types) for further details on event types.
+#### Github API
+Endpoints used:
+- (Repo metadata)[https://docs.github.com/en/rest/repos] - forks, created_at, etc.
+- (Repo stats)[https://docs.github.com/en/rest/metrics/statistics] - contributor activity 
+#### Tagging and Metadata
+Consolidated categories and labels from various data sources including Messari, DefiLlama, Coingecko.  
+
+#### Further work
+- Include commits / contributors from all branches
+- Clean, consolidate, and add more tags to enable more accurate cross-sectional analyses
+- Further interactive analysis of interesting developer trends across / within ecosystems
+""")
 st.header("Select projects")
 selected_projects = st.multiselect("Projects", projects, ["Ethereum"], label_visibility="hidden")
 project_pat = create_search_pat(selected_projects)
