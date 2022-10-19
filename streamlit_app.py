@@ -106,13 +106,13 @@ def filter_df_by_tags(df, tags):
     return df[mask].title.values.tolist()
 
 
-def create_agg_plot(df, val_col="contributor_count"):
+def create_agg_plot(df, val_col="contributor_count", title=''):
     df = df.groupby("date")[val_col].sum().reset_index()
     fig = (
         px.scatter(df, x="date", y=val_col, title="")
         .update_traces(mode="lines")
         .update_layout(
-            title="Total Developer Count across all tagged Protocols",
+            title=title,
             xaxis=dict(title=""),
             legend_title="",
         )
@@ -156,7 +156,7 @@ tagged_fig = create_line_plot(
     tagged_plot_df,
     title=f"Developer Count by Protocols tagged {' or '.join(t for t in selected_tags)}",
 )
-agg_fig = create_agg_plot(tagged_plot_df)
+agg_fig = create_agg_plot(tagged_plot_df, title=f"Total Developer Count across all protocols tagged {', '.join(selected_tags)}")
 
 st.plotly_chart(agg_fig)
 st.plotly_chart(tagged_fig)
