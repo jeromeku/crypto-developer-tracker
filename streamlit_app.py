@@ -32,8 +32,8 @@ DEFAULT_EVENT_SET = sorted(
 )
 DEFAULT_PROJECTS = ["Ethereum"]
 
-METADATA_PATH = "./data/electric_capital/2022-10-18-project_df.csv"
-CONTRIBS_DATA_PATH = "./data/github/2022-10-18-contributor_stats_by_month.csv"
+METADATA_PATH = "./data/2022-10-18-project_df.csv"
+CONTRIBS_DATA_PATH = "./data/2022-10-18-contributor_stats_by_month.csv"
 
 
 def create_search_pat(selected_projects):
