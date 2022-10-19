@@ -2,7 +2,10 @@ import streamlit as st
 import pandas as pd
 import pydash
 import plotly.express as px
+import plotly.graph_objects as go
 import re
+
+st.set_page_config(layout="wide")
 
 EVENT_TYPES = [
     "CommitCommentEvent",
@@ -31,7 +34,6 @@ DEFAULT_EVENT_SET = sorted(
     ]
 )
 DEFAULT_PROJECTS = ["Ethereum"]
-
 METADATA_PATH = "./data/2022-10-18-project_df.csv"
 CONTRIBS_DATA_PATH = "./data/2022-10-18-contributor_stats_by_month.csv"
 EVENTS_DATA_PATH = "./data/2022-10-18-gharchive_event_counts_by_month.csv"
@@ -45,10 +47,36 @@ def create_line_plot(df, title="", **options):
     fig = (
         px.scatter(df, x="date", y="contributor_count", color="title", **options)
         .update_traces(mode="lines")
-        .update_layout(xaxis=dict(title=""), title=title, legend=dict(title=""))
-        .update_xaxes(rangeslider_visible=True)
+        .update_layout(xaxis=dict(title=""), yaxis=dict(title=""), title=title, legend=dict(title=""))
+        .update_xaxes(rangeslider_visible=False)
     )
     return fig
+def create_area_plot(df, title="", **options):
+    fig = (
+        px.area(df, x="date", y="contributor_count", color="title", **options)
+        .update_traces(mode="lines")
+        .update_layout(xaxis=dict(title=""), yaxis=dict(title=""), title=title, legend=dict(title=""))
+        .update_xaxes(rangeslider_visible=False)
+    )
+    for i in range(len(fig['data'])):
+        fig['data'][i]['line']['width']=0
+    return fig
+
+def create_faceted_bar_chart(df, filter_vals, filter_key="title", x="date", y="event_count", color="type", facet_row="title", title='', **kwargs):
+    filter_pat = f"{filter_key}.isin(@filter_vals)"
+    print(filter_pat)
+    subset = df.query(filter_pat).sort_values('date')
+    fig = px.bar(subset, x=x, y=y,color=color,facet_row=facet_row, barmode="group", **kwargs).update_layout(legend=dict(title=""))
+    fig = fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+    
+    # hide subplot y-axis titles and x-axis titles
+    for axis in fig.layout:
+        if type(fig.layout[axis]) == go.layout.YAxis:
+            fig.layout[axis].title.text = ''
+        if type(fig.layout[axis]) == go.layout.XAxis:
+            fig.layout[axis].title.text = ''
+            
+    return fig.update_layout(title=title)
 
 
 def convert_type(col, type_):
@@ -113,53 +141,54 @@ def create_agg_plot(df, val_col="contributor_count", title=''):
         .update_traces(mode="lines")
         .update_layout(
             title=title,
-            xaxis=dict(title=""),
+            xaxis=dict(title=""),yaxis=dict(title=""),
             legend_title="",
         )
-        .update_xaxes(rangeslider_visible=True)
+        .update_xaxes(rangeslider_visible=False)
     )
     return fig
 
 @st.cache
-def load_events_df(path=EVENTS_DATA_PATH):
-    return pd.read_csv(path)
+def load_events_df(path=EVENTS_DATA_PATH, event_types=DEFAULT_EVENT_SET):
+    df = pd.read_csv(path)
+    df = df[df["type"].isin(event_types)]
+    return df
+meta_df, projects, tags = load_metadata(METADATA_PATH)
+contribs_df = load_contribs_df()
+events_df = load_events_df()
 
 st.title("Crypto Developer Tracker")
-meta_df, projects, tags = load_metadata(METADATA_PATH)
+st.header("Introduction")
+st.header("Methodology")
 
 st.header("Select projects")
-selected_projects = st.multiselect("Projects", projects, ["Ethereum"])
-
+selected_projects = st.multiselect("Projects", projects, ["Ethereum"], label_visibility="hidden")
 project_pat = create_search_pat(selected_projects)
-
-contribs_df = load_contribs_df()
 
 plot_df = contribs_df[
     contribs_df.title.str.contains(project_pat, flags=re.I, regex=True)
 ]
-
 plot_options = {"log_y": False}
-fig = create_line_plot(plot_df, **plot_options)
-st.plotly_chart(fig)
+contribs_fig = create_line_plot(plot_df, title="Monthly Developer Count", **plot_options)
+
+events_fig = create_faceted_bar_chart(events_df, selected_projects, title="Monthly GitHub Event Counts", log_y=False)
+
+st.plotly_chart(contribs_fig, use_container_width=True)
+st.plotly_chart(events_fig, use_container_width=True)
 
 st.header("Select tags")
-selected_tags = st.multiselect("Tags", tags, tags[:2])
+selected_tags = st.multiselect("Tags", tags, tags[7], label_visibility="hidden")
 tagged_project_set = filter_df_by_tags(meta_df, selected_tags)
 tagged_plot_df = contribs_df[contribs_df.title.isin(tagged_project_set)]
-tagged_fig = create_line_plot(
+tagged_fig = create_area_plot(
     tagged_plot_df,
-    title=f"Developer Count by Protocols tagged {' or '.join(t for t in selected_tags)}",
+    title=f"Monthly Developer Count by Protocols tagged {' or '.join(t for t in selected_tags)}", log_y=False
 )
-agg_fig = create_agg_plot(tagged_plot_df, title=f"Total Developer Count across all protocols tagged {', '.join(selected_tags)}")
+agg_fig = create_agg_plot(tagged_plot_df, title=f"Total Monthly Developer Count across all protocols tagged {' or '.join(selected_tags)}")
 
-st.plotly_chart(agg_fig)
-st.plotly_chart(tagged_fig)
+st.plotly_chart(agg_fig, use_container_width=True)
+st.plotly_chart(tagged_fig, use_container_width=True)
 
-events_df = load_events_df()
-events_df = events_df[events_df['type'].isin(DEFAULT_EVENT_SET)]
-event_plot_df = events_df.query("title.isin(selected_projects)")
-event_fig = px.bar(event_plot_df, x="date", y="event_count", color="type", log_y=True, barmode='group',facet_row="title",)
-st.plotly_chart(event_fig)
 # st.header("Select Events")
 # events = sorted(EVENT_TYPES)
 # selected_events = st.multiselect("Events", events, DEFAULT_EVENT_SET)
