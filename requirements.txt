@@ -1,0 +1,4 @@
+pydash
+pandas
+streamlit
+plotly
