@@ -34,7 +34,7 @@ DEFAULT_PROJECTS = ["Ethereum"]
 
 METADATA_PATH = "./data/2022-10-18-project_df.csv"
 CONTRIBS_DATA_PATH = "./data/2022-10-18-contributor_stats_by_month.csv"
-
+EVENTS_DATA_PATH = "./data/2022-10-18-gharchive_event_counts_by_month.csv"
 
 def create_search_pat(selected_projects):
     pat = rf'{"|".join([rf"^{p}$" for p in selected_projects])}'
@@ -120,6 +120,10 @@ def create_agg_plot(df, val_col="contributor_count", title=''):
     )
     return fig
 
+@st.cache
+def load_events_df(path=EVENTS_DATA_PATH):
+    return pd.read_csv(path)
+
 st.title("Crypto Developer Tracker")
 meta_df, projects, tags = load_metadata(METADATA_PATH)
 
@@ -151,8 +155,12 @@ agg_fig = create_agg_plot(tagged_plot_df, title=f"Total Developer Count across a
 st.plotly_chart(agg_fig)
 st.plotly_chart(tagged_fig)
 
-st.markdown("Charts across projects Events and Contributors")
-st.header("Select Events")
-events = sorted(EVENT_TYPES)
-selected_events = st.multiselect("Events", events, DEFAULT_EVENT_SET)
-st.write(f"Events: {selected_events}")
+events_df = load_events_df()
+events_df = events_df[events_df['type'.isin(DEFAULT_EVENT_SET)]]
+event_plot_df = events_df.query("title.isin(selected_projects)")
+event_fig = px.bar(event_plot_df, x="date", y="event_count", color="type", log_y=True, barmode='group',facet_row="title",)
+st.plotly_chart(event_fig)
+# st.header("Select Events")
+# events = sorted(EVENT_TYPES)
+# selected_events = st.multiselect("Events", events, DEFAULT_EVENT_SET)
+# st.write(f"Events: {selected_events}")
